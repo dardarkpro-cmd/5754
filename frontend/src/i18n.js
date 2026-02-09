@@ -1,0 +1,390 @@
+// i18n.js - Simple internationalization module
+// Default language: kz, stores in localStorage
+
+const translations = {
+    kz: {
+        // Header
+        logout: 'Шығу',
+        // Login
+        login: 'Кіру',
+        loginLabel: 'Логин',
+        pinLabel: 'PIN',
+        loginBtn: 'Кіру',
+        loggingIn: 'Кіруде...',
+        loginSuccess: 'Сәтті кірдіңіз!',
+        welcome: 'Қош келдіңіз',
+        // Nav
+        menu: 'Мәзір',
+        cart: 'Себет',
+        checkout: 'Төлем',
+        cook: 'Аспаз',
+        pickup: 'Алу',
+        // Menu
+        menuTitle: 'Мәзір',
+        loading: 'Жүктелуде...',
+        noItems: 'Қол жетімді позициялар жоқ',
+        add: 'Қосу',
+        addedToCart: 'Себетке қосылды!',
+        pcs: 'дана',
+        unavailable: 'Қол жетімсіз',
+        youMayLike: 'Ұнауы мүмкін',
+        close: 'Жабу',
+        addToCart: 'Себетке қосу',
+        inStock: 'Қалдық',
+        // Cart
+        cartTitle: 'Себет',
+        emptyCart: 'Себет бос',
+        total: 'Барлығы',
+        proceedToCheckout: 'Төлемге өту',
+        remove: 'Жою',
+        // Checkout
+        checkoutTitle: 'Төлем',
+        placeOrder: 'Тапсырыс беру',
+        orderPlaced: 'Тапсырыс берілді!',
+        orderId: 'Тапсырыс ID',
+        // Cook
+        cookTitle: 'Аспаз кезегі',
+        noOrders: 'Кезекте тапсырыс жоқ',
+        refresh: 'Жаңарту',
+        markReady: 'Дайын деп белгілеу',
+        ready: 'Дайын!',
+        cell: 'Ұяшық',
+        pin: 'PIN',
+        order: 'Тапсырыс',
+        status: 'Күй',
+        user: 'Пайдаланушы',
+        items: 'Позициялар',
+        scheduled: 'Жоспарланған',
+        // Pickup
+        pickupTitle: 'Тапсырысты алу',
+        enterOrderId: 'Тапсырыс ID енгізіңіз',
+        enterPin: 'PIN енгізіңіз',
+        claimOrder: 'Тапсырысты алу',
+        claimed: 'Тапсырыс алынды!',
+        // Statuses
+        statusCreated: 'Құрылды',
+        statusPaid: 'Төленді',
+        statusInKitchen: 'Дайындалуда',
+        statusReady: 'Дайын',
+        statusClaimed: 'Алынды',
+        // Admin
+        admin: 'Админ',
+        adminTitle: 'Мәзірді басқару',
+        reload: 'Жаңарту',
+        save: 'Сақтау',
+        saving: 'Сақталуда...',
+        saved: 'Сақталды!',
+        name: 'Атауы',
+        category: 'Санат',
+        qty: 'Саны',
+        available: 'Қол жетімді',
+        price: 'Бағасы',
+        // Admin Users
+        usersTitle: 'Пайдаланушылар',
+        menuSection: 'Мәзір',
+        usersSection: 'Пайдаланушылар',
+        createUser: 'Пайдаланушы құру',
+        editUser: 'Өзгерту',
+        deleteUser: 'Жою',
+        displayName: 'Аты',
+        actions: 'Әрекеттер',
+        roleUser: 'Оқушы',
+        roleCook: 'Аспаз',
+        roleAdmin: 'Админ',
+        confirmDeleteUser: 'Пайдаланушыны жою керек пе?',
+        cannotDeleteSelf: 'Өзіңізді жоя алмайсыз',
+        cannotDeleteLastAdmin: 'Соңғы админді жою мүмкін емес',
+        userCreated: 'Пайдаланушы құрылды',
+        userUpdated: 'Пайдаланушы жаңартылды',
+        userDeleted: 'Пайдаланушы жойылды',
+        errorLoadingUsers: 'Пайдаланушыларды жүктеу қатесі',
+        role: 'Рөлі',
+        cancel: 'Болдырмау',
+        // Weekdays
+        today: 'Бүгін',
+        showing: 'Көрсетілуде',
+        monday: 'Дүйсенбі',
+        tuesday: 'Сейсенбі',
+        wednesday: 'Сәрсенбі',
+        thursday: 'Бейсенбі',
+        friday: 'Жұма',
+        saturday: 'Сенбі',
+        sunday: 'Жексенбі',
+        mon: 'Дс',
+        tue: 'Сс',
+        wed: 'Ср',
+        thu: 'Бс',
+        fri: 'Жм',
+        // Errors
+        error: 'Қате',
+        pleaseLoginFirst: 'Алдымен жүйеге кіріңіз',
+        cookOnly: 'Бұл бет тек аспаздарға арналған'
+    },
+    ru: {
+        // Header
+        logout: 'Выход',
+        // Login
+        login: 'Вход',
+        loginLabel: 'Логин',
+        pinLabel: 'PIN',
+        loginBtn: 'Войти',
+        loggingIn: 'Вход...',
+        loginSuccess: 'Успешный вход!',
+        welcome: 'Добро пожаловать',
+        // Nav
+        menu: 'Меню',
+        cart: 'Корзина',
+        checkout: 'Оплата',
+        cook: 'Повар',
+        pickup: 'Получение',
+        // Menu
+        menuTitle: 'Меню',
+        loading: 'Загрузка...',
+        noItems: 'Нет доступных позиций',
+        add: 'Добавить',
+        addedToCart: 'Добавлено в корзину!',
+        pcs: 'шт.',
+        unavailable: 'Недоступно',
+        youMayLike: 'Вам может понравиться',
+        close: 'Закрыть',
+        addToCart: 'В корзину',
+        inStock: 'Осталось',
+        // Cart
+        cartTitle: 'Корзина',
+        emptyCart: 'Корзина пуста',
+        total: 'Итого',
+        proceedToCheckout: 'Перейти к оплате',
+        remove: 'Удалить',
+        // Checkout
+        checkoutTitle: 'Оплата',
+        placeOrder: 'Оформить заказ',
+        orderPlaced: 'Заказ оформлен!',
+        orderId: 'ID заказа',
+        // Cook
+        cookTitle: 'Очередь повара',
+        noOrders: 'Нет заказов в очереди',
+        refresh: 'Обновить',
+        markReady: 'Отметить готовым',
+        ready: 'Готово!',
+        cell: 'Ячейка',
+        pin: 'PIN',
+        order: 'Заказ',
+        status: 'Статус',
+        user: 'Пользователь',
+        items: 'Позиции',
+        scheduled: 'Запланировано',
+        // Pickup
+        pickupTitle: 'Получение заказа',
+        enterOrderId: 'Введите ID заказа',
+        enterPin: 'Введите PIN',
+        claimOrder: 'Забрать заказ',
+        claimed: 'Заказ получен!',
+        // Statuses
+        statusCreated: 'Создан',
+        statusPaid: 'Оплачен',
+        statusInKitchen: 'Готовится',
+        statusReady: 'Готов',
+        statusClaimed: 'Получен',
+        // Admin
+        admin: 'Админ',
+        adminTitle: 'Управление меню',
+        reload: 'Обновить',
+        save: 'Сохранить',
+        saving: 'Сохранение...',
+        saved: 'Сохранено!',
+        name: 'Название',
+        category: 'Категория',
+        qty: 'Кол-во',
+        available: 'Доступно',
+        price: 'Цена',
+        // Admin Users
+        usersTitle: 'Пользователи',
+        menuSection: 'Меню',
+        usersSection: 'Пользователи',
+        createUser: 'Создать пользователя',
+        editUser: 'Редактировать',
+        deleteUser: 'Удалить',
+        displayName: 'Имя',
+        actions: 'Действия',
+        roleUser: 'Ученик',
+        roleCook: 'Повар',
+        roleAdmin: 'Админ',
+        confirmDeleteUser: 'Удалить пользователя навсегда?',
+        cannotDeleteSelf: 'Нельзя удалить себя',
+        cannotDeleteLastAdmin: 'Нельзя удалить последнего админа',
+        userCreated: 'Пользователь создан',
+        userUpdated: 'Пользователь обновлён',
+        userDeleted: 'Пользователь удалён',
+        errorLoadingUsers: 'Ошибка загрузки пользователей',
+        role: 'Роль',
+        cancel: 'Отмена',
+        // Weekdays
+        today: 'Сегодня',
+        showing: 'Показано',
+        monday: 'Понедельник',
+        tuesday: 'Вторник',
+        wednesday: 'Среда',
+        thursday: 'Четверг',
+        friday: 'Пятница',
+        saturday: 'Суббота',
+        sunday: 'Воскресенье',
+        mon: 'Пн',
+        tue: 'Вт',
+        wed: 'Ср',
+        thu: 'Чт',
+        fri: 'Пт',
+        // Errors
+        error: 'Ошибка',
+        pleaseLoginFirst: 'Сначала войдите в систему',
+        cookOnly: 'Эта страница только для поваров'
+    },
+    en: {
+        // Header
+        logout: 'Logout',
+        // Login
+        login: 'Login',
+        loginLabel: 'Login',
+        pinLabel: 'PIN',
+        loginBtn: 'Login',
+        loggingIn: 'Logging in...',
+        loginSuccess: 'Login successful!',
+        welcome: 'Welcome',
+        // Nav
+        menu: 'Menu',
+        cart: 'Cart',
+        checkout: 'Checkout',
+        cook: 'Cook',
+        pickup: 'Pickup',
+        // Menu
+        menuTitle: 'Menu',
+        loading: 'Loading...',
+        noItems: 'No items available',
+        add: 'Add',
+        addedToCart: 'Added to cart!',
+        pcs: 'pcs',
+        unavailable: 'Unavailable',
+        youMayLike: 'You may like',
+        close: 'Close',
+        addToCart: 'Add to cart',
+        inStock: 'In stock',
+        // Cart
+        cartTitle: 'Cart',
+        emptyCart: 'Cart is empty',
+        total: 'Total',
+        proceedToCheckout: 'Proceed to Checkout',
+        remove: 'Remove',
+        // Checkout
+        checkoutTitle: 'Checkout',
+        placeOrder: 'Place Order',
+        orderPlaced: 'Order placed!',
+        orderId: 'Order ID',
+        // Cook
+        cookTitle: 'Cook Queue',
+        noOrders: 'No orders in queue',
+        refresh: 'Refresh',
+        markReady: 'Mark Ready',
+        ready: 'Ready!',
+        cell: 'Cell',
+        pin: 'PIN',
+        order: 'Order',
+        status: 'Status',
+        user: 'User',
+        items: 'Items',
+        scheduled: 'Scheduled',
+        // Pickup
+        pickupTitle: 'Pickup Order',
+        enterOrderId: 'Enter Order ID',
+        enterPin: 'Enter PIN',
+        claimOrder: 'Claim Order',
+        claimed: 'Order claimed!',
+        // Statuses
+        statusCreated: 'Created',
+        statusPaid: 'Paid',
+        statusInKitchen: 'In Kitchen',
+        statusReady: 'Ready',
+        statusClaimed: 'Claimed',
+        // Admin
+        admin: 'Admin',
+        adminTitle: 'Menu Management',
+        reload: 'Reload',
+        save: 'Save',
+        saving: 'Saving...',
+        saved: 'Saved!',
+        name: 'Name',
+        category: 'Category',
+        qty: 'Qty',
+        available: 'Available',
+        price: 'Price',
+        // Admin Users
+        usersTitle: 'Users',
+        menuSection: 'Menu',
+        usersSection: 'Users',
+        createUser: 'Create User',
+        editUser: 'Edit',
+        deleteUser: 'Delete',
+        displayName: 'Name',
+        actions: 'Actions',
+        roleUser: 'Student',
+        roleCook: 'Cook',
+        roleAdmin: 'Admin',
+        confirmDeleteUser: 'Delete user permanently?',
+        cannotDeleteSelf: 'Cannot delete yourself',
+        cannotDeleteLastAdmin: 'Cannot delete the last admin',
+        userCreated: 'User created',
+        userUpdated: 'User updated',
+        userDeleted: 'User deleted',
+        errorLoadingUsers: 'Error loading users',
+        role: 'Role',
+        cancel: 'Cancel',
+        // Weekdays
+        today: 'Today',
+        showing: 'Showing',
+        monday: 'Monday',
+        tuesday: 'Tuesday',
+        wednesday: 'Wednesday',
+        thursday: 'Thursday',
+        friday: 'Friday',
+        saturday: 'Saturday',
+        sunday: 'Sunday',
+        mon: 'Mon',
+        tue: 'Tue',
+        wed: 'Wed',
+        thu: 'Thu',
+        fri: 'Fri',
+        // Errors
+        error: 'Error',
+        pleaseLoginFirst: 'Please login first',
+        cookOnly: 'This page is for cooks only'
+    }
+};
+
+// Status mapping (backend -> i18n key)
+const statusMap = {
+    'CREATED': 'statusCreated',
+    'PAID': 'statusPaid',
+    'IN_KITCHEN': 'statusInKitchen',
+    'READY': 'statusReady',
+    'CLAIMED': 'statusClaimed'
+};
+
+export function getLang() {
+    return localStorage.getItem('lang') || 'kz';
+}
+
+export function setLang(lang) {
+    localStorage.setItem('lang', lang);
+}
+
+export function t(key) {
+    const lang = getLang();
+    return translations[lang]?.[key] || translations['en']?.[key] || key;
+}
+
+export function tStatus(status) {
+    const key = statusMap[status];
+    return key ? t(key) : status;
+}
+
+export function getAvailableLangs() {
+    return ['kz', 'ru', 'en'];
+}

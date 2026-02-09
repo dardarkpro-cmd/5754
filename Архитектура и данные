@@ -1,0 +1,60 @@
+# Архитектура и данные (MVP)
+
+## Стек
+- Backend: Flask + SQLAlchemy + Alembic
+- Frontend: HTML/CSS + JS (минимально)
+- Авторизация: сессии или JWT (на ваш выбор)
+
+## Мультиорганизационность (Multi-tenant)
+Сущности:
+- Organization (например бизнес-центр или школа)
+- Location (кафе/столовая внутри org)
+- Users привязаны к org, при необходимости к location
+
+Важно: на MVP добавление Organization делаем вручную “через нас”, как в требованиях.
+
+## Минимальная схема БД
+- organizations(id, name, status)
+- locations(id, org_id, name, opening_hours, closing_hours, is_closed_manual)
+- users(id, org_id, role[user|cook|admin], name, folder_id, login, pin_hash)
+- folders(id, org_id, name, type[class|teachers])
+- menu_items(id, org_id, name, category, nutrition_100g_json, base_price, is_composable)
+- inventory(id, location_id, menu_item_id, is_available, stock_qty)
+- menu_templates(id, location_id, template_type[A|B|C], day_of_week, meal_slot[breakfast|lunch|dinner], items_json)
+- orders(id, user_id, location_id, scheduled_for, status, total, created_at)
+- order_items(id, order_id, menu_item_id, qty, modifiers_json, comment)
+- receipts(id, order_id, receipt_json/html, qr_token)
+- locker_cells(id, location_id, code[A1..A10], status[FREE|RESERVED|OCCUPIED])
+- pickup_tokens(id, order_id, cell_id, token_hash, expires_at, used_at)
+
+## API (черновик)
+Auth:
+- POST /auth/login
+- POST /auth/logout
+
+Menu:
+- GET /menu?date=&meal_slot=
+- GET /menu/search?q=
+- GET /menu/categories
+
+Cart/Orders:
+- POST /orders (создать из корзины, проверить scheduled_for <= now+3h)
+- POST /payments/fake (перевести в PAID)
+- GET /orders/{id}
+- GET /orders/history
+
+Cook:
+- POST /cook/menu-items
+- PATCH /cook/inventory/{item_id}
+- PUT /cook/menu-templates
+- GET /cook/orders/queue
+- POST /cook/orders/{id}/ready (ячейка + QR/PIN)
+
+Admin:
+- POST /admin/users
+- GET /admin/users
+- DELETE /admin/users/{id}
+- PATCH /admin/location/close (toggle)
+
+Pickup:
+- POST /pickup/claim (QR/PIN → verify → выдача → освободить ячейку)

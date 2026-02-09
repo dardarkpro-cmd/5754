@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Smart Canteen MVP</title>
+  <link rel="stylesheet" href="/src/style.css">
+</head>
+
+<body>
+  <div id="app">
+    <header id="header">
+      <div class="header-title">Smart Canteen</div>
+      <div class="header-actions">
+        <select id="lang-switcher">
+          <option value="kz">KZ</option>
+          <option value="ru">RU</option>
+          <option value="en">EN</option>
+        </select>
+        <button id="logout-btn" class="btn btn-sm btn-secondary hidden">Logout</button>
+      </div>
+    </header>
+    <nav id="nav" class="hidden">
+      <button data-page="menu">Menu</button>
+      <button data-page="cart">Cart</button>
+      <button data-page="checkout">Checkout</button>
+      <button data-page="cook">Cook</button>
+      <button data-page="pickup">Pickup</button>
+      <button data-page="admin">Admin</button>
+    </nav>
+    <main id="main"></main>
+  </div>
+  <script type="module" src="/src/main.js"></script>
+</body>
+
+</html>
