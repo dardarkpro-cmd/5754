@@ -1,4 +1,4 @@
-import { getToken } from '../api.js';
+import { api, getToken } from '../api.js';
 import { t } from '../i18n.js';
 
 export function renderPickup(container, navigateTo) {
@@ -30,34 +30,22 @@ export function renderPickup(container, navigateTo) {
     result.innerHTML = `${t('loading')}`;
 
     try {
-      const headers = { 'Content-Type': 'application/json' };
-      if (token) {
-        headers['Authorization'] = `Bearer ${token}`;
-      }
-
-      const response = await fetch('/api/pickup/claim', {
+      const data = await api('/pickup/claim', {
         method: 'POST',
-        headers,
         body: JSON.stringify(body)
       });
 
-      const data = await response.json();
-
-      if (response.ok) {
-        result.innerHTML = `
-          <div class="success" style="font-size:18px;margin-bottom:12px">✓ ${t('claimed')}</div>
-          <div class="info">
-            <div><strong>${t('orderId')}:</strong> ${data.order_id}</div>
-            <div><strong>${t('cell')}:</strong> ${data.cell_code}</div>
-          </div>
-        `;
-        localStorage.removeItem('order_id');
-      } else {
-        result.innerHTML = `<p class="error">${t('error')}: ${data.message || data.error}</p>`;
-      }
+      result.innerHTML = `
+        <div class="success" style="font-size:18px;margin-bottom:12px">✓ ${t('claimed')}</div>
+        <div class="info">
+          <div><strong>${t('orderId')}:</strong> ${data.order_id}</div>
+          <div><strong>${t('cell')}:</strong> ${data.cell_code}</div>
+        </div>
+      `;
+      localStorage.removeItem('order_id');
 
     } catch (err) {
-      result.innerHTML = `<p class="error">${t('error')}: ${err.message}</p>`;
+      result.innerHTML = `<p class="error">${t('error')}: ${err.message || err.error}</p>`;
     }
   }
 
