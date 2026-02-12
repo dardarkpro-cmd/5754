@@ -1,12 +1,14 @@
 """
 Seed data for Smart Canteen MVP
-1 org, 1 location, 5 users, 10 menu items, 10 locker cells
+1 org, 1 location, 5 users, 10 menu items, 10 locker cells, 1 daily menu, 1 sample order
 """
-from datetime import time
+from datetime import time, date, datetime, timedelta
 from werkzeug.security import generate_password_hash
 from app import db, create_app
 from app.models import (
-    Organization, Location, User, MenuItem, Inventory, LockerCell
+    Organization, Location, User, MenuItem, Inventory, LockerCell,
+    DailyMenu, DailyMenuItem, Order, OrderItem, Receipt,
+    LockerReservation, PickupToken
 )
 
 
@@ -17,7 +19,14 @@ def seed():
         # Create tables if they don't exist
         db.create_all()
         
-        # Clear existing data
+        # Clear existing data (order matters for FK constraints)
+        PickupToken.query.delete()
+        LockerReservation.query.delete()
+        Receipt.query.delete()
+        OrderItem.query.delete()
+        Order.query.delete()
+        DailyMenuItem.query.delete()
+        DailyMenu.query.delete()
         LockerCell.query.delete()
         Inventory.query.delete()
         MenuItem.query.delete()
@@ -57,7 +66,7 @@ def seed():
         ]
         db.session.add_all(users)
         
-        # Menu Items (distributed across weekdays: 2 items per day)
+        # Menu Items
         items = [
             MenuItem(id='item-1', org_id='org-1', name_kz='Борщ', name_ru='Борщ', 
                      category='first', base_price=450, calories_100g=45, menu_day=1),
@@ -99,11 +108,11 @@ def seed():
             Inventory(id='inv-7', location_id='loc-1', menu_item_id='item-7', 
                       is_available=True, stock_qty=80),
             Inventory(id='inv-8', location_id='loc-1', menu_item_id='item-8', 
-                      is_available=True, stock_qty=None),  # unlimited
+                      is_available=True, stock_qty=None),
             Inventory(id='inv-9', location_id='loc-1', menu_item_id='item-9', 
                       is_available=True, stock_qty=20),
             Inventory(id='inv-10', location_id='loc-1', menu_item_id='item-10', 
-                      is_available=False, stock_qty=0),  # out of stock
+                      is_available=False, stock_qty=0),
         ]
         db.session.add_all(inventory)
         
@@ -114,6 +123,47 @@ def seed():
         ]
         db.session.add_all(cells)
         
+        # Daily Menu for today (lunch slot, 7 items)
+        today = date.today()
+        dm = DailyMenu(
+            id='dm-1',
+            location_id='loc-1',
+            menu_date=today,
+            meal_slot='lunch',
+            created_by='cook-1'
+        )
+        db.session.add(dm)
+        db.session.flush()
+        
+        daily_items = [
+            DailyMenuItem(daily_menu_id='dm-1', menu_item_id='item-1', stock_qty=50, is_available=True),
+            DailyMenuItem(daily_menu_id='dm-1', menu_item_id='item-2', stock_qty=30, is_available=True),
+            DailyMenuItem(daily_menu_id='dm-1', menu_item_id='item-3', stock_qty=40, is_available=True),
+            DailyMenuItem(daily_menu_id='dm-1', menu_item_id='item-4', stock_qty=60, is_available=True),
+            DailyMenuItem(daily_menu_id='dm-1', menu_item_id='item-5', stock_qty=100, is_available=True),
+            DailyMenuItem(daily_menu_id='dm-1', menu_item_id='item-6', stock_qty=25, is_available=True),
+            DailyMenuItem(daily_menu_id='dm-1', menu_item_id='item-7', stock_qty=80, is_available=True),
+        ]
+        db.session.add_all(daily_items)
+        
+        # Sample order (PAID) — cook can mark_ready to generate pickup_code
+        sample_order = Order(
+            id='order-demo-1',
+            user_id='user-1',
+            location_id='loc-1',
+            status='PAID',
+            scheduled_for=datetime.utcnow() + timedelta(minutes=30),
+            total=1100
+        )
+        db.session.add(sample_order)
+        db.session.flush()
+        
+        demo_items = [
+            OrderItem(order_id='order-demo-1', menu_item_id='item-1', qty=1, unit_price=450),
+            OrderItem(order_id='order-demo-1', menu_item_id='item-3', qty=1, unit_price=650),
+        ]
+        db.session.add_all(demo_items)
+        
         db.session.commit()
         print("✓ Seed data created successfully!")
         print("  - 1 organization")
@@ -121,6 +171,8 @@ def seed():
         print("  - 5 users (admin, cook, 3 students)")
         print("  - 10 menu items")
         print("  - 10 locker cells")
+        print(f"  - 1 daily menu for {today} (lunch, 7 items)")
+        print("  - 1 sample order (PAID) — use cook to mark ready")
         print("\nLogin credentials:")
         print("  admin / 123456")
         print("  cook / 123456")

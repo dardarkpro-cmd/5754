@@ -139,3 +139,25 @@ export async function adminDeleteUser(userId) {
     });
 }
 
+// ==================== Daily Menu API ====================
+
+export async function getCatalog(locationId) {
+    return api(`/catalog?location_id=${locationId}`);
+}
+
+export async function getDailyMenu(locationId, date, mealSlot = 'lunch') {
+    return api(`/cook/daily-menu?location_id=${locationId}&date=${date}&meal_slot=${mealSlot}`);
+}
+
+export async function saveDailyMenu(payload) {
+    return api('/cook/daily-menu', {
+        method: 'PUT',
+        body: JSON.stringify(payload)
+    });
+}
+
+// ==================== Orders API ====================
+
+export async function getMyOrders() {
+    return api('/orders/my');
+}

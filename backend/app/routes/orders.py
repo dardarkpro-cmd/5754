@@ -1,5 +1,5 @@
 """
-Orders routes - POST /orders, POST /payments/fake, GET /orders/{id}
+Orders routes - POST /orders, POST /payments/fake, GET /orders/{id}, GET /orders/my
 """
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
@@ -173,21 +173,6 @@ def get_order(order_id):
     if not order:
         return jsonify({'error': 'order_not_found'}), 404
     
-    # Lazy-expire check
-    if order.status == 'READY' and order.reservation:
-        if datetime.utcnow() > order.reservation.hold_until:
-            order.status = 'EXPIRED'
-            order.reservation.released_at = datetime.utcnow()
-            order.reservation.cell.status = 'FREE'
-            db.session.commit()
-    
-    # Get active token
-    active_token = None
-    for token in order.tokens:
-        if token.used_at is None:
-            active_token = token
-            break
-    
     response = {
         'id': order.id,
         'status': order.status,
@@ -197,17 +182,52 @@ def get_order(order_id):
             'name': item.menu_item.name_ru,
             'qty': item.qty,
             'unit_price': item.unit_price
-        } for item in order.items]
+        } for item in order.items],
+        'created_at': order.created_at.isoformat()
     }
     
-    if order.reservation and active_token:
-        response['pickup'] = {
-            'cell_code': order.reservation.cell.code,
-            'qr_token': active_token.qr_token,
-            'pin_code': active_token.pin_code,
-            'token_expires_at': active_token.token_expires_at.isoformat(),
-            'pickup_deadline_at': order.reservation.hold_until.isoformat(),
-            'token_valid': datetime.utcnow() < active_token.token_expires_at
-        }
+    # Show pickup_code only when order is READY
+    if order.status == 'READY' and order.pickup_code:
+        response['pickup_code'] = order.pickup_code
+        response['ready_at'] = order.ready_at.isoformat() if order.ready_at else None
+    
+    if order.status == 'PICKED_UP':
+        response['picked_up_at'] = order.picked_up_at.isoformat() if order.picked_up_at else None
+    
+    # Include cell info if available
+    if order.reservation:
+        response['cell_code'] = order.reservation.cell.code
     
     return jsonify(response)
+
+
+@bp.route('/orders/my', methods=['GET'])
+@jwt_required()
+def get_my_orders():
+    """Get all orders for the current user."""
+    user_id = get_jwt_identity()
+    
+    orders = Order.query.filter_by(user_id=user_id).order_by(Order.created_at.desc()).limit(20).all()
+    
+    result = []
+    for order in orders:
+        entry = {
+            'id': order.id,
+            'status': order.status,
+            'total': order.total,
+            'scheduled_for': order.scheduled_for.isoformat(),
+            'created_at': order.created_at.isoformat(),
+            'items': [{
+                'name': item.menu_item.name_ru,
+                'qty': item.qty,
+                'unit_price': item.unit_price
+            } for item in order.items]
+        }
+        
+        # Show pickup_code only when order is READY
+        if order.status == 'READY' and order.pickup_code:
+            entry['pickup_code'] = order.pickup_code
+        
+        result.append(entry)
+    
+    return jsonify({'orders': result})

@@ -3,7 +3,7 @@ Smart Canteen - Database Models
 All 11 tables for Sprint 1
 """
 import uuid
-from datetime import datetime
+from datetime import datetime, date as date_type
 from app import db
 
 
@@ -108,6 +108,9 @@ class Order(db.Model):
     scheduled_for = db.Column(db.DateTime, nullable=False)
     total = db.Column(db.Integer, nullable=False)  # в тиынах
     priority = db.Column(db.Integer, default=0)
+    pickup_code = db.Column(db.String(6), nullable=True)  # 6-digit pickup code
+    ready_at = db.Column(db.DateTime, nullable=True)
+    picked_up_at = db.Column(db.DateTime, nullable=True)
     pickup_deadline_at = db.Column(db.DateTime)  # cell hold until
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
@@ -187,3 +190,38 @@ class PickupToken(db.Model):
         db.Index('idx_pickup_token_expires', 'token_expires_at',
                  postgresql_where=(db.text('used_at IS NULL'))),
     )
+
+
+# ==================== Daily Menu Tables ====================
+
+class DailyMenu(db.Model):
+    __tablename__ = 'daily_menus'
+    
+    id = db.Column(db.String(36), primary_key=True, default=generate_uuid)
+    location_id = db.Column(db.String(36), db.ForeignKey('locations.id'), nullable=False)
+    menu_date = db.Column(db.Date, nullable=False)
+    meal_slot = db.Column(db.String(20), nullable=False, default='lunch')
+    created_by = db.Column(db.String(36), db.ForeignKey('users.id'), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    __table_args__ = (
+        db.UniqueConstraint('location_id', 'menu_date', 'meal_slot', name='uq_daily_menu_loc_date_slot'),
+    )
+    
+    items = db.relationship('DailyMenuItem', backref='daily_menu', lazy='dynamic',
+                            cascade='all, delete-orphan')
+    location = db.relationship('Location', backref='daily_menus')
+    creator = db.relationship('User', backref='created_daily_menus')
+
+
+class DailyMenuItem(db.Model):
+    __tablename__ = 'daily_menu_items'
+    
+    id = db.Column(db.String(36), primary_key=True, default=generate_uuid)
+    daily_menu_id = db.Column(db.String(36), db.ForeignKey('daily_menus.id'), nullable=False)
+    menu_item_id = db.Column(db.String(36), db.ForeignKey('menu_items.id'), nullable=False)
+    stock_qty = db.Column(db.Integer, nullable=True)  # null = unlimited
+    is_available = db.Column(db.Boolean, default=True)
+    
+    menu_item = db.relationship('MenuItem', backref='daily_menu_entries')
+

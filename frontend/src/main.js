@@ -4,16 +4,18 @@ import { renderMenu } from './pages/menu.js';
 import { renderCart } from './pages/cart.js';
 import { renderCheckout } from './pages/checkout.js';
 import { renderCook } from './pages/cook.js';
+import { renderDailyMenu } from './pages/daily_menu.js';
 import { renderPickup } from './pages/pickup.js';
+import { renderMyOrders } from './pages/my_orders.js';
 import { renderAdmin } from './pages/admin.js';
 import { getToken, getUser, clearToken, clearUser } from './api.js';
 import { getLang, setLang, t } from './i18n.js';
 
 // Role-based route access lists
 const ROLE_ROUTES = {
-  student: ['menu', 'cart', 'checkout', 'pickup'],
-  cook: ['cook', 'pickup'],
-  admin: ['menu', 'admin']
+  student: ['menu', 'cart', 'checkout', 'pickup', 'my-orders'],
+  cook: ['cook', 'daily-menu', 'pickup'],
+  admin: ['menu', 'admin', 'daily-menu', 'my-orders']
 };
 
 function getDefaultRoute(role) {
@@ -42,7 +44,11 @@ function updateStaticTexts() {
   nav.querySelector('[data-page="cart"]').textContent = t('cart');
   nav.querySelector('[data-page="checkout"]').textContent = t('checkout');
   nav.querySelector('[data-page="cook"]').textContent = t('cook');
+  const dmBtn = nav.querySelector('[data-page="daily-menu"]');
+  if (dmBtn) dmBtn.textContent = 'Меню дня';
   nav.querySelector('[data-page="pickup"]').textContent = t('pickup');
+  const myOrdersBtn = nav.querySelector('[data-page="my-orders"]');
+  if (myOrdersBtn) myOrdersBtn.textContent = 'Мои заказы';
   const adminBtn = nav.querySelector('[data-page="admin"]');
   if (adminBtn) adminBtn.textContent = t('admin');
 }
@@ -130,8 +136,14 @@ async function handleRoute() {
     case 'cook':
       await renderCook(mainContainer, navigateTo);
       break;
+    case 'daily-menu':
+      await renderDailyMenu(mainContainer, navigateTo);
+      break;
     case 'pickup':
       renderPickup(mainContainer, navigateTo);
+      break;
+    case 'my-orders':
+      await renderMyOrders(mainContainer, navigateTo);
       break;
     case 'admin':
       await renderAdmin(mainContainer, navigateTo);

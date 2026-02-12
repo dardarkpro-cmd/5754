@@ -2,19 +2,6 @@ import { api, addToCart, getToken } from '../api.js';
 import { t, getLang } from '../i18n.js';
 import { getItemMeta, placeholderImage } from '../menu_meta.js';
 
-// Short day names for buttons (1=Mon..5=Fri)
-const dayKeys = ['mon', 'tue', 'wed', 'thu', 'fri'];
-function getShortDayName(num) {
-  // num: 1-5
-  return t(dayKeys[num - 1] || 'mon');
-}
-
-// Helper to get weekday name from number (1=Mon, 7=Sun)
-function getWeekdayName(num) {
-  const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
-  return t(days[num - 1] || 'monday');
-}
-
 // Get localized name
 function getLocalizedName(item, lang) {
   if (lang === 'kz' && item.name_kz) return item.name_kz;
@@ -30,21 +17,25 @@ function getLocalizedDesc(meta, lang) {
   return meta.desc_en || meta.desc_ru || '';
 }
 
-// Calculate which days to show based on today's weekday
-function getVisibleDays(todayWeekday) {
-  // todayWeekday: 1=Mon..7=Sun
-  if (todayWeekday >= 1 && todayWeekday <= 5) {
-    // Mon-Fri: show from today to min(5, today+3)
-    const end = Math.min(5, todayWeekday + 3);
-    const days = [];
-    for (let d = todayWeekday; d <= end; d++) {
-      days.push(d);
-    }
-    return days;
-  } else {
-    // Sat/Sun: show 1,2,3 (Mon/Tue/Wed)
-    return [1, 2, 3];
+function formatDate(d) {
+  return d.toISOString().slice(0, 10);
+}
+
+function getDateLabel(d) {
+  const dayNames = [t('sunday') || 'Вс', t('monday') || 'Пн', t('tuesday') || 'Вт',
+  t('wednesday') || 'Ср', t('thursday') || 'Чт', t('friday') || 'Пт', t('saturday') || 'Сб'];
+  return `${dayNames[d.getDay()]} ${d.getDate().toString().padStart(2, '0')}.${(d.getMonth() + 1).toString().padStart(2, '0')}`;
+}
+
+// Build date list: today + 3 days
+function getDateOptions() {
+  const dates = [];
+  for (let i = 0; i < 4; i++) {
+    const d = new Date();
+    d.setDate(d.getDate() + i);
+    dates.push(d);
   }
+  return dates;
 }
 
 export async function renderMenu(container, navigateTo) {
@@ -55,41 +46,38 @@ export async function renderMenu(container, navigateTo) {
 
   container.innerHTML = `<h2>${t('menuTitle')}</h2><p class="loading">${t('loading')}</p>`;
 
-  // Initial load without day param (backend auto-determines)
-  await loadMenuForDay(container, null, navigateTo);
+  // Initial load with today's date
+  await loadMenuForDate(container, formatDate(new Date()), navigateTo);
 }
 
-async function loadMenuForDay(container, selectedDay, navigateTo) {
+async function loadMenuForDate(container, selectedDate, navigateTo) {
   try {
-    const url = selectedDay ? `/menu?day=${selectedDay}` : '/menu?location_id=loc-1';
+    const url = `/menu?location_id=loc-1&date=${selectedDate}`;
     const data = await api(url);
 
-    if (!data.meta) {
-      container.innerHTML = `<h2>${t('menuTitle')}</h2><p class="error">${t('error')}</p>`;
-      return;
-    }
-
-    const todayWeekday = data.meta.today;    // 1-7
-    const showingDay = data.meta.showing;    // 1-5
-    const visibleDays = getVisibleDays(todayWeekday);
+    const dateOptions = getDateOptions();
     const lang = getLang();
 
     let html = `<h2>${t('menuTitle')}</h2>`;
 
-    // Day selector dropdown
+    // Date selector dropdown
     html += '<div class="day-selector">';
-    html += '<select id="day-select" class="day-select">';
-    visibleDays.forEach(d => {
-      const selected = d === showingDay ? ' selected' : '';
-      html += `<option value="${d}"${selected}>${getWeekdayName(d)}</option>`;
+    html += '<select id="date-select" class="day-select">';
+    dateOptions.forEach(d => {
+      const val = formatDate(d);
+      const selected = val === selectedDate ? ' selected' : '';
+      html += `<option value="${val}"${selected}>${getDateLabel(d)}</option>`;
     });
     html += '</select>';
     html += '</div>';
 
     if (!data.items || data.items.length === 0) {
-      html += `<p>${t('noItems')}</p>`;
+      const noMenuMsg = data.has_daily_menu === false
+        ? 'Меню на этот день ещё не составлено'
+        : t('noItems');
+      html += `<p>${noMenuMsg}</p>`;
       container.innerHTML = html;
-      attachDaySelectHandler(container, navigateTo);
+      attachDateSelectHandler(container, navigateTo);
       return;
     }
 
@@ -196,8 +184,8 @@ async function loadMenuForDay(container, selectedDay, navigateTo) {
     const itemsMap = {};
     data.items.forEach(item => { itemsMap[item.id] = item; });
 
-    // Day select handler
-    attachDaySelectHandler(container, navigateTo);
+    // Date select handler
+    attachDateSelectHandler(container, navigateTo);
 
     // Open modal on card click
     container.querySelectorAll('.menu-card, .rec-card').forEach(card => {
@@ -249,12 +237,11 @@ async function loadMenuForDay(container, selectedDay, navigateTo) {
   }
 }
 
-function attachDaySelectHandler(container, navigateTo) {
-  const select = container.querySelector('#day-select');
+function attachDateSelectHandler(container, navigateTo) {
+  const select = container.querySelector('#date-select');
   if (select) {
     select.addEventListener('change', (e) => {
-      const day = parseInt(e.target.value);
-      loadMenuForDay(container, day, navigateTo);
+      loadMenuForDate(container, e.target.value, navigateTo);
     });
   }
 }
@@ -306,4 +293,3 @@ function showMessage(container, msg) {
   msgEl.innerHTML = `<span class="success">${msg}</span>`;
   setTimeout(() => msgEl.innerHTML = '', 2000);
 }
-

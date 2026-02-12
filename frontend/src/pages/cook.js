@@ -68,7 +68,7 @@ export async function renderCook(container, navigateTo) {
                         body: JSON.stringify({})
                     });
 
-                    resultSpan.innerHTML = `<span class="success"> ✓ ${t('ready')} ${t('cell')}: ${result.pickup.cell_code}, ${t('pin')}: ${result.pickup.pin_code}</span>`;
+                    resultSpan.innerHTML = `<span class="success"> ✓ ${t('ready')} | Код выдачи: <strong style="font-size:18px;letter-spacing:2px">${result.pickup_code}</strong>${result.cell_code ? ` | ${t('cell')}: ${result.cell_code}` : ''}</span>`;
                     btn.style.display = 'none';
 
                 } catch (err) {

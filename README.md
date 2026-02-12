@@ -127,10 +127,76 @@ Flow: Login(student1) → Menu → Cart → Checkout → Login(cook) → Cook Qu
 |----------|--------|------|-------------|
 | /health | GET | No | Health check |
 | /api/auth/login | POST | No | Login, get JWT |
-| /api/menu?location_id=loc-1 | GET | Yes | Get menu items |
-| /api/orders | POST | Yes | Create order (with location_id) |
+| /api/menu?location_id=loc-1&date=YYYY-MM-DD | GET | Yes | Get daily menu items |
+| /api/catalog?location_id=loc-1 | GET | Yes | Get all catalog items |
+| /api/orders | POST | Yes | Create order |
+| /api/orders/my | GET | Yes | Get current user's orders |
+| /api/orders/{id} | GET | Yes | Get order details |
 | /api/payments/fake | POST | Yes | Fake payment |
+| /api/cook/daily-menu | GET | Yes (cook/admin) | Get daily menu structure |
+| /api/cook/daily-menu | PUT | Yes (cook/admin) | Create/update daily menu |
 | /api/cook/orders/queue?location_id=loc-1 | GET | Yes (cook) | Get orders queue |
-| /api/cook/orders/{id}/ready | POST | Yes (cook) | Mark order ready |
-| /api/pickup/claim | POST | No | Claim order with PIN |
+| /api/cook/orders/{id}/ready | POST | Yes (cook) | Mark order ready → generates pickup_code |
+| /api/pickup/claim | POST | No | Claim order with {order_id, pickup_code} |
 
+## Pickup Code Verification (Full Flow)
+
+### Via UI
+
+1. Login as `student1 / 123456` → **Menu** → add items → **Checkout** → place order
+2. Login as `cook / 123456` → **Cook** → see the PAID order → click **Отметить готовым**
+3. Cook sees the 6-digit **Код выдачи** (e.g. `047291`)
+4. Login as `student1 / 123456` → **Мои заказы** → order shows READY with the pickup code
+5. Go to **Pickup** → enter Order ID + pickup code → click **Получить заказ**
+6. Order status changes to PICKED_UP ✓
+
+> After `python seed.py` there is already a sample PAID order (`order-demo-1`) for `student1`.
+
+### Via API (PowerShell)
+
+```powershell
+# 1. Login as cook
+$resp = Invoke-RestMethod -Uri http://127.0.0.1:5000/api/auth/login -Method POST -ContentType "application/json" -Body '{"login":"cook","pin":"123456"}'
+$token = $resp.access_token
+
+# 2. Mark demo order ready (generates pickup_code)
+$ready = Invoke-RestMethod -Uri http://127.0.0.1:5000/api/cook/orders/order-demo-1/ready -Method POST -ContentType "application/json" -Headers @{Authorization="Bearer $token"} -Body '{}'
+$ready  # shows pickup_code
+
+# 3. Claim order with the code
+$code = $ready.pickup_code
+Invoke-RestMethod -Uri http://127.0.0.1:5000/api/pickup/claim -Method POST -ContentType "application/json" -Body ('{"order_id":"order-demo-1","pickup_code":"' + $code + '"}')
+```
+
+## Daily Menu ("Меню дня") Verification
+
+### Via UI
+
+1. Login as `cook / 123456`
+2. Click **Меню дня** in nav → see all catalog items with checkboxes
+3. Pick a date, check/uncheck items, set stock quantities
+4. Click **Сохранить** → success message
+5. Login as `student1 / 123456`
+6. Menu page shows items for today's daily menu; change date to see other days
+
+### Via API (PowerShell)
+
+```powershell
+# Login as cook
+$resp = Invoke-RestMethod -Uri http://127.0.0.1:5000/api/auth/login -Method POST -ContentType "application/json" -Body '{"login":"cook","pin":"123456"}'
+$token = $resp.access_token
+
+# Get catalog
+Invoke-RestMethod -Uri "http://127.0.0.1:5000/api/catalog?location_id=loc-1" -Headers @{Authorization="Bearer $token"}
+
+# Get daily menu for today
+$today = (Get-Date).ToString("yyyy-MM-dd")
+Invoke-RestMethod -Uri "http://127.0.0.1:5000/api/cook/daily-menu?location_id=loc-1&date=$today&meal_slot=lunch" -Headers @{Authorization="Bearer $token"}
+
+# Save daily menu
+$body = '{"location_id":"loc-1","menu_date":"' + $today + '","meal_slot":"lunch","items":[{"menu_item_id":"item-1","stock_qty":10,"is_available":true},{"menu_item_id":"item-3","stock_qty":20,"is_available":true}]}'
+Invoke-RestMethod -Uri "http://127.0.0.1:5000/api/cook/daily-menu" -Method PUT -ContentType "application/json" -Headers @{Authorization="Bearer $token"} -Body $body
+
+# Check user-facing menu
+Invoke-RestMethod -Uri "http://127.0.0.1:5000/api/menu?location_id=loc-1&date=$today" -Headers @{Authorization="Bearer $token"}
+```
