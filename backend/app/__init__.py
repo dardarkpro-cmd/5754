@@ -1,6 +1,6 @@
 import os
 from datetime import timedelta
-from flask import Flask
+from flask import Flask, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from flask_jwt_extended import JWTManager
@@ -44,7 +44,6 @@ def create_app():
         'http://127.0.0.1:5173',
     ]
     if frontend_url:
-        # Support comma-separated list: "https://a.vercel.app,https://b.vercel.app"
         for origin in frontend_url.split(','):
             origin = origin.strip().rstrip('/')
             if origin and origin not in allowed_origins:
@@ -56,10 +55,10 @@ def create_app():
     # Import models for migrations
     from app import models  # noqa
     
-    # Health check
-    @app.route('/health')
+    # Health check — at /api/health so Render/monitoring can hit it
+    @app.route('/api/health')
     def health():
-        return {'status': 'ok'}
+        return jsonify({"status": "ok"}), 200
     
     # Register blueprints
     from app.routes import auth, menu, orders, cook, pickup
@@ -71,15 +70,4 @@ def create_app():
     app.register_blueprint(pickup.bp, url_prefix='/api')
     app.register_blueprint(admin.bp, url_prefix='/api/admin')
     
-    return app
-from flask import jsonify
-
-def create_app():
-    app = Flask(__name__)
-    # ... твоя конфигурация и register_blueprints ...
-
-    @app.get("/api/health")
-    def health():
-        return jsonify({"ok": True}), 200
-
     return app

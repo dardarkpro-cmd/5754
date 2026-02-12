@@ -15,7 +15,11 @@ export function clearToken() {
 
 export function getUser() {
     const userStr = localStorage.getItem('user');
-    return userStr ? JSON.parse(userStr) : null;
+    try {
+        return userStr ? JSON.parse(userStr) : null;
+    } catch {
+        return null;
+    }
 }
 
 export function setUser(user) {
@@ -37,10 +41,21 @@ export async function api(endpoint, options = {}) {
         headers['Authorization'] = `Bearer ${token}`;
     }
 
-    const response = await fetch(`${API_BASE}${endpoint}`, {
-        ...options,
-        headers
-    });
+    let response;
+    try {
+        response = await fetch(`${API_BASE}${endpoint}`, {
+            ...options,
+            headers
+        });
+    } catch (networkErr) {
+        // fetch() itself failed: network error, CORS block, server down, timeout
+        throw {
+            _network: true,
+            status: 0,
+            error: 'network_error',
+            message: 'Сервер недоступен (сетевая ошибка)'
+        };
+    }
 
     // Safe JSON parsing: check content-type first
     const contentType = response.headers.get('content-type') || '';
@@ -59,16 +74,20 @@ export async function api(endpoint, options = {}) {
     }
 
     if (!response.ok) {
-        // Auto-logout on 401 (expired/invalid token)
-        if (response.status === 401) {
+        // Auto-logout on 401 (expired/invalid token) — but NOT on /auth/login
+        if (response.status === 401 && !endpoint.includes('/auth/login')) {
             clearToken();
             clearUser();
-            // Redirect to login (skip if already on login page to avoid loop)
             if (!window.location.hash.includes('login')) {
                 window.location.hash = '#/login';
             }
         }
-        throw { status: response.status, message: data.error || data.message || `HTTP ${response.status}`, ...data };
+        throw {
+            _network: false,
+            status: response.status,
+            message: data.error || data.message || `HTTP ${response.status}`,
+            ...data
+        };
     }
 
     return data;

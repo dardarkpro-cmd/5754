@@ -43,13 +43,22 @@ export function renderLogin(container, navigateTo) {
       setTimeout(() => {
         if (data.user.role === 'cook') {
           navigateTo('cook');
+        } else if (data.user.role === 'admin') {
+          navigateTo('admin');
         } else {
           navigateTo('menu');
         }
       }, 500);
 
     } catch (err) {
-      result.innerHTML = `<p class="error">${t('error')}: ${err.message || err.error}</p>`;
+      // Differentiate network errors from API errors
+      if (err._network) {
+        result.innerHTML = `<p class="error">Сервер недоступен. Проверьте подключение к интернету и попробуйте позже.</p>`;
+      } else if (err.status === 401) {
+        result.innerHTML = `<p class="error">Неверный логин или PIN</p>`;
+      } else {
+        result.innerHTML = `<p class="error">${t('error')}: ${err.message || err.error || 'Неизвестная ошибка'}</p>`;
+      }
     }
   });
 }
