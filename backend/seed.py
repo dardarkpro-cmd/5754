@@ -11,6 +11,19 @@ from app.models import (
     LockerReservation, PickupToken
 )
 
+# backend/seed.py
+
+from app import db
+from app.models import User, Organization, Location  # и что у тебя там есть
+
+def seed_data():
+    # тут твой текущий код, который создаёт organization/location/users/menu и т.д.
+    # ВАЖНО: не делай db.create_all() тут, это будет в init
+    ...
+
+if __name__ == "__main__":
+    # оставить можно, чтобы локально запускать python seed.py
+    seed_data()
 
 def seed():
     app = create_app()
