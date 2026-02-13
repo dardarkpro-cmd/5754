@@ -1,27 +1,18 @@
-# Dependencies
-node_modules/
-venv/
-
-# Python cache
-__pycache__/
+# Python
+backend/venv/
+backend/__pycache__/
+backend/**/*.pyc
 *.pyc
-*.pyo
-.pytest_cache/
 
-# Environment
+# Node
+frontend/node_modules/
+frontend/dist/
+
+# Local DB / temp
+backend/*.db
+*.sqlite
+*.sqlite3
+
+# Env / secrets
 .env
-
-# Database
-instance/*.db
-*.db
-
-# Build output
-dist/
-
-# IDE
-.vscode/
-.idea/
-
-# OS files
-.DS_Store
-Thumbs.db
+.env.*
