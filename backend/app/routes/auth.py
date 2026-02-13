@@ -29,6 +29,15 @@ def login():
             'display_name': user.display_name
         }
     )
+
+    # Build group info
+    group_info = None
+    if user.group_id and user.group:
+        group_info = {
+            'id': user.group.id,
+            'name': user.group.name,
+            'type': user.group.type
+        }
     
     return jsonify({
         'access_token': access_token,
@@ -38,6 +47,7 @@ def login():
             'role': user.role,
             'display_name': user.display_name,
             'language': user.language,
-            'theme': user.theme
+            'theme': user.theme,
+            'group': group_info
         }
     })

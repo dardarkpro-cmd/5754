@@ -158,6 +158,26 @@ export async function adminDeleteUser(userId) {
     });
 }
 
+// ==================== Groups API ====================
+
+export async function adminGetGroups() {
+    return api('/admin/groups');
+}
+
+export async function adminCreateGroup(payload) {
+    return api('/admin/groups', {
+        method: 'POST',
+        body: JSON.stringify(payload)
+    });
+}
+
+export async function adminAssignGroup(userId, groupId) {
+    return api(`/admin/users/${userId}/group`, {
+        method: 'PUT',
+        body: JSON.stringify({ group_id: groupId })
+    });
+}
+
 // ==================== Daily Menu API ====================
 
 export async function getCatalog(locationId) {

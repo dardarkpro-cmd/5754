@@ -48,6 +48,16 @@ body {
   align-items: center;
 }
 
+.user-info {
+  font-size: 13px;
+  font-weight: 500;
+  color: #555;
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 #lang-switcher {
   padding: 6px 10px;
   border: 1px solid #ccc;

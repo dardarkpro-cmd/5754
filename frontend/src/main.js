@@ -54,6 +54,7 @@ function updateStaticTexts() {
 }
 
 // Show/hide nav and logout based on auth state + role
+const userInfoSpan = document.getElementById('user-info');
 function updateAuthUI() {
   const isLoggedIn = !!getToken();
   const user = getUser();
@@ -72,9 +73,18 @@ function updateAuthUI() {
         btn.classList.add('hidden');
       }
     });
+    // Show user info in header
+    let userLabel = user.display_name || user.login || '';
+    if (user.group && user.group.name) {
+      userLabel += ` (${user.group.name})`;
+    }
+    userInfoSpan.textContent = userLabel;
+    userInfoSpan.classList.remove('hidden');
   } else {
     nav.classList.add('hidden');
     logoutBtn.classList.add('hidden');
+    userInfoSpan.classList.add('hidden');
+    userInfoSpan.textContent = '';
   }
 }
 

@@ -1,5 +1,8 @@
-// Admin page - menu management + users CRUD
-import { api, adminGetUsers, adminCreateUser, adminUpdateUser, adminDeleteUser } from '../api.js';
+// Admin page - menu management + users CRUD + groups management
+import {
+  api, adminGetUsers, adminCreateUser, adminUpdateUser, adminDeleteUser,
+  adminGetGroups, adminCreateGroup, adminAssignGroup
+} from '../api.js';
 import { t, getLang } from '../i18n.js';
 
 let currentTab = 'menu';
@@ -10,6 +13,7 @@ export async function renderAdmin(container, navigateTo) {
     <div class="admin-tabs">
       <button id="tab-menu" class="tab-btn active">${t('menuSection')}</button>
       <button id="tab-users" class="tab-btn">${t('usersSection')}</button>
+      <button id="tab-groups" class="tab-btn">${t('groupsSection')}</button>
     </div>
     <div id="admin-content"></div>
   `;
@@ -17,20 +21,25 @@ export async function renderAdmin(container, navigateTo) {
   const contentContainer = container.querySelector('#admin-content');
   const tabMenuBtn = container.querySelector('#tab-menu');
   const tabUsersBtn = container.querySelector('#tab-users');
+  const tabGroupsBtn = container.querySelector('#tab-groups');
 
   function setTab(tab) {
     currentTab = tab;
     tabMenuBtn.classList.toggle('active', tab === 'menu');
     tabUsersBtn.classList.toggle('active', tab === 'users');
+    tabGroupsBtn.classList.toggle('active', tab === 'groups');
     if (tab === 'menu') {
       renderMenuTab(contentContainer);
-    } else {
+    } else if (tab === 'users') {
       renderUsersTab(contentContainer);
+    } else {
+      renderGroupsTab(contentContainer);
     }
   }
 
   tabMenuBtn.addEventListener('click', () => setTab('menu'));
   tabUsersBtn.addEventListener('click', () => setTab('users'));
+  tabGroupsBtn.addEventListener('click', () => setTab('groups'));
 
   setTab('menu');
 }
@@ -203,6 +212,7 @@ async function renderUsersTab(container) {
             <th>${t('loginLabel')}</th>
             <th>${t('displayName')}</th>
             <th>${t('role')}</th>
+            <th>${t('group')}</th>
             <th>${t('actions')}</th>
           </tr>
         </thead>
@@ -220,6 +230,7 @@ async function renderUsersTab(container) {
                       <option value="admin" ${user.role === 'admin' ? 'selected' : ''}>${t('roleAdmin')}</option>
                     </select>
                   </td>
+                  <td>${user.group ? user.group.name : '—'}</td>
                   <td>
                     <input type="password" class="edit-pin" placeholder="${t('pinLabel')}" style="width:80px" />
                     <button class="btn btn-sm save-edit-btn">${t('save')}</button>
@@ -233,6 +244,7 @@ async function renderUsersTab(container) {
                 <td>${user.login}</td>
                 <td>${user.display_name || '—'}</td>
                 <td>${getRoleName(user.role)}</td>
+                <td>${user.group ? user.group.name : '—'}</td>
                 <td>
                   <button class="btn btn-sm edit-btn">${t('editUser')}</button>
                   <button class="btn btn-sm btn-danger delete-btn">${t('deleteUser')}</button>
@@ -334,7 +346,6 @@ async function renderUsersTab(container) {
     try {
       await adminCreateUser({ login, pin, role, display_name: displayName });
       result.innerHTML = `<p class="success">${t('userCreated')}</p>`;
-      // Clear form
       container.querySelector('#new-login').value = '';
       container.querySelector('#new-pin').value = '';
       container.querySelector('#new-role').value = 'user';
@@ -346,4 +357,181 @@ async function renderUsersTab(container) {
   });
 
   await loadUsers();
+}
+
+// ==================== Groups Tab ====================
+
+function getTypeName(type) {
+  if (type === 'school') return t('groupTypeSchool');
+  if (type === 'university') return t('groupTypeUniversity');
+  if (type === 'business') return t('groupTypeBusiness');
+  return type;
+}
+
+async function renderGroupsTab(container) {
+  container.innerHTML = `
+    <div id="groups-result"></div>
+
+    <div class="groups-create-form" style="margin-bottom:20px; padding:12px; border:1px solid #ddd; border-radius:8px; background:#fafafa;">
+      <h4 style="margin-top:0">${t('createGroup')}</h4>
+      <div class="form-row" style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+        <input type="text" id="new-group-name" placeholder="${t('groupName')}" style="flex:1; min-width:120px" />
+        <select id="new-group-type" style="min-width:120px">
+          <option value="school">${t('groupTypeSchool')}</option>
+          <option value="university">${t('groupTypeUniversity')}</option>
+          <option value="business">${t('groupTypeBusiness')}</option>
+        </select>
+        <button id="create-group-btn" class="btn btn-primary">${t('createGroup')}</button>
+      </div>
+    </div>
+
+    <div id="groups-table-container">
+      <p>${t('loading')}</p>
+    </div>
+
+    <div class="assign-section" style="margin-top:24px; padding:12px; border:1px solid #ddd; border-radius:8px; background:#fafafa;">
+      <h4 style="margin-top:0">${t('assignGroup')}</h4>
+      <div class="form-row" style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+        <select id="assign-user" style="flex:1; min-width:140px">
+          <option value="">${t('selectUser')}</option>
+        </select>
+        <select id="assign-group" style="flex:1; min-width:140px">
+          <option value="">${t('selectGroup')}</option>
+        </select>
+        <button id="assign-btn" class="btn btn-primary">${t('assignGroup')}</button>
+        <button id="remove-group-btn" class="btn btn-danger">${t('removeGroup')}</button>
+      </div>
+    </div>
+  `;
+
+  const result = container.querySelector('#groups-result');
+  const tableContainer = container.querySelector('#groups-table-container');
+  const createBtn = container.querySelector('#create-group-btn');
+  const assignBtn = container.querySelector('#assign-btn');
+  const removeBtn = container.querySelector('#remove-group-btn');
+  const userSelect = container.querySelector('#assign-user');
+  const groupSelect = container.querySelector('#assign-group');
+
+  let groups = [];
+  let users = [];
+
+  // ---- Render groups table ----
+  function renderGroupsTable() {
+    if (groups.length === 0) {
+      tableContainer.innerHTML = `<p>${t('noGroups')}</p>`;
+      return;
+    }
+
+    tableContainer.innerHTML = `
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>${t('groupName')}</th>
+            <th>${t('groupType')}</th>
+            <th>${t('userCount')}</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${groups.map(g => `
+            <tr>
+              <td>${g.name}</td>
+              <td>${getTypeName(g.type)}</td>
+              <td>${g.user_count}</td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    `;
+  }
+
+  // ---- Populate selects ----
+  function populateSelects() {
+    // Users
+    userSelect.innerHTML = `<option value="">${t('selectUser')}</option>`;
+    users.forEach(u => {
+      const groupLabel = u.group ? ` [${u.group.name}]` : '';
+      userSelect.innerHTML += `<option value="${u.id}">${u.display_name || u.login} (${u.login})${groupLabel}</option>`;
+    });
+
+    // Groups
+    groupSelect.innerHTML = `<option value="">${t('selectGroup')}</option>`;
+    groups.forEach(g => {
+      groupSelect.innerHTML += `<option value="${g.id}">${g.name} (${getTypeName(g.type)})</option>`;
+    });
+  }
+
+  // ---- Load data ----
+  async function loadAll() {
+    tableContainer.innerHTML = `<p>${t('loading')}</p>`;
+    try {
+      const [groupsData, usersData] = await Promise.all([
+        adminGetGroups(),
+        adminGetUsers()
+      ]);
+      groups = groupsData.groups || [];
+      users = usersData.users || [];
+      renderGroupsTable();
+      populateSelects();
+    } catch (err) {
+      result.innerHTML = `<p class="error">${t('error')}: ${err.message}</p>`;
+    }
+  }
+
+  // ---- Create group ----
+  createBtn.addEventListener('click', async () => {
+    const name = container.querySelector('#new-group-name').value.trim();
+    const type = container.querySelector('#new-group-type').value;
+
+    if (!name) {
+      result.innerHTML = `<p class="error">${t('error')}: ${t('groupName')} required</p>`;
+      return;
+    }
+
+    try {
+      await adminCreateGroup({ name, type });
+      result.innerHTML = `<p class="success">${t('groupCreated')}</p>`;
+      container.querySelector('#new-group-name').value = '';
+      await loadAll();
+    } catch (err) {
+      result.innerHTML = `<p class="error">${t('error')}: ${err.message}</p>`;
+    }
+  });
+
+  // ---- Assign group ----
+  assignBtn.addEventListener('click', async () => {
+    const userId = userSelect.value;
+    const groupId = groupSelect.value;
+
+    if (!userId || !groupId) {
+      result.innerHTML = `<p class="error">${t('selectUser')} / ${t('selectGroup')}</p>`;
+      return;
+    }
+
+    try {
+      await adminAssignGroup(userId, groupId);
+      result.innerHTML = `<p class="success">${t('groupAssigned')}</p>`;
+      await loadAll();
+    } catch (err) {
+      result.innerHTML = `<p class="error">${t('error')}: ${err.message}</p>`;
+    }
+  });
+
+  // ---- Remove group ----
+  removeBtn.addEventListener('click', async () => {
+    const userId = userSelect.value;
+    if (!userId) {
+      result.innerHTML = `<p class="error">${t('selectUser')}</p>`;
+      return;
+    }
+
+    try {
+      await adminAssignGroup(userId, null);
+      result.innerHTML = `<p class="success">${t('groupRemoved')}</p>`;
+      await loadAll();
+    } catch (err) {
+      result.innerHTML = `<p class="error">${t('error')}: ${err.message}</p>`;
+    }
+  });
+
+  await loadAll();
 }

@@ -23,6 +23,7 @@ class Organization(db.Model):
     locations = db.relationship('Location', backref='organization', lazy='dynamic')
     users = db.relationship('User', backref='organization', lazy='dynamic')
     menu_items = db.relationship('MenuItem', backref='organization', lazy='dynamic')
+    groups = db.relationship('Group', backref='organization', lazy='dynamic')
 
 
 class Location(db.Model):
@@ -41,6 +42,22 @@ class Location(db.Model):
     locker_cells = db.relationship('LockerCell', backref='location', lazy='dynamic')
 
 
+class Group(db.Model):
+    __tablename__ = 'groups'
+
+    id = db.Column(db.String(36), primary_key=True, default=generate_uuid)
+    org_id = db.Column(db.String(36), db.ForeignKey('organizations.id'), nullable=False)
+    name = db.Column(db.String(100), nullable=False)
+    type = db.Column(db.String(20), nullable=False)  # school, university, business
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    __table_args__ = (
+        db.UniqueConstraint('org_id', 'name', name='uq_group_org_name'),
+    )
+
+    users = db.relationship('User', backref='group', lazy='dynamic')
+
+
 class User(db.Model):
     __tablename__ = 'users'
     
@@ -50,6 +67,7 @@ class User(db.Model):
     login = db.Column(db.String(100), nullable=False, unique=True)
     pin_hash = db.Column(db.String(255), nullable=False)
     display_name = db.Column(db.String(255))
+    group_id = db.Column(db.String(36), db.ForeignKey('groups.id'), nullable=True)
     language = db.Column(db.String(5), default='ru')
     theme = db.Column(db.String(10), default='light')
     created_at = db.Column(db.DateTime, default=datetime.utcnow)

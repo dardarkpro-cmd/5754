@@ -14,18 +14,44 @@ app = create_app()
 with app.app_context():
     db.create_all()
 
-    # --- Migrate: add missing columns to existing tables ---
-    # db.create_all() only creates NEW tables, it won't add columns
-    # to tables that already exist. We handle that here.
+    # --- Migrate: add missing columns / tables to existing DB ---
     migrations = [
+        # Orders — pickup columns
         ("orders", "pickup_code", "ALTER TABLE orders ADD COLUMN pickup_code VARCHAR(6)"),
         ("orders", "ready_at", "ALTER TABLE orders ADD COLUMN ready_at TIMESTAMP"),
         ("orders", "picked_up_at", "ALTER TABLE orders ADD COLUMN picked_up_at TIMESTAMP"),
+        # Users — group_id
+        ("users", "group_id", "ALTER TABLE users ADD COLUMN group_id VARCHAR(36) REFERENCES groups(id)"),
     ]
+
+    # Ensure groups table exists (db.create_all handles new tables)
+    # But for safety, explicitly check:
+    try:
+        result = db.session.execute(text(
+            "SELECT table_name FROM information_schema.tables "
+            "WHERE table_name = 'groups' AND table_schema = 'public'"
+        ))
+        if result.fetchone() is None:
+            db.session.execute(text("""
+                CREATE TABLE groups (
+                    id VARCHAR(36) PRIMARY KEY,
+                    org_id VARCHAR(36) NOT NULL REFERENCES organizations(id),
+                    name VARCHAR(100) NOT NULL,
+                    type VARCHAR(20) NOT NULL,
+                    created_at TIMESTAMP DEFAULT NOW(),
+                    CONSTRAINT uq_group_org_name UNIQUE (org_id, name)
+                )
+            """))
+            db.session.commit()
+            print("✓ Created table: groups")
+        else:
+            print("  Table groups already exists")
+    except Exception as e:
+        db.session.rollback()
+        print(f"⚠ groups table migration: {e}")
 
     for table, column, sql in migrations:
         try:
-            # Check if column exists
             result = db.session.execute(text(
                 "SELECT column_name FROM information_schema.columns "
                 "WHERE table_name = :table AND column_name = :column"
